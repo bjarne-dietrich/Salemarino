@@ -32,7 +32,7 @@ def index():
                     print(f"Folder created: {folder_path}")
 
                     # Generate timestamp
-                    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                    timestamp = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
 
                     # Save the file in the folder with timestamp as part of filename
                     file_name = f"{timestamp}_{secure_filename(file.filename)}"
