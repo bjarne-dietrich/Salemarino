@@ -98,3 +98,4 @@ This is a Flask project for Storing and Getting Images from the Web Browser.
 ## Notes
 
 - If you encounter any issues or have questions, please feel free to open an issue on GitHub.
+- See LICENSE.md for License Information
