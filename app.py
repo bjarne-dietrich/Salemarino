@@ -53,13 +53,18 @@ def index():
 @app.route('/search', methods=['GET'])
 def search():
     query = request.args.get('query', '')
+    explicit = request.args.get('explicit', '').lower() == 'true'
     if query:
         # Search for folders containing the query string
         results = []
         for root, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
             for dir in dirs:
-                if query in dir:
-                    results.append(os.path.relpath(os.path.join(root, dir), app.config['UPLOAD_FOLDER']))
+                if explicit:
+                    if query == dir:
+                        results.append(os.path.relpath(os.path.join(root, dir), app.config['UPLOAD_FOLDER']))
+                else:
+                    if query in dir:
+                        results.append(os.path.relpath(os.path.join(root, dir), app.config['UPLOAD_FOLDER']))
         print(f"Search results for query '{query}': {results}")
         return render_template('search_results.html', query=query, results=results, get_images_in_folder=get_images_in_folder)
     else:
