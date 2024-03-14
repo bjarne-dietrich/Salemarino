@@ -30,7 +30,7 @@
         <h2>Browse Folders</h2>
         <ul class="list-group">
             {% for folder in folders %}
-                <a href="{{ url_for('search', query=folder) }}" class="list-group-item list-group-item-action">{{ folder }}</a>
+                <a href="{{ url_for('search', query=folder, explicit='true') }}" class="list-group-item list-group-item-action">{{ folder }}</a>
             {% endfor %}
         </ul>
     </div>
