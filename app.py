@@ -56,7 +56,7 @@ def allowed_file(filename):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        project_id = request.form['folderName']
+        project_id = request.form['projectID']
         file = request.files['file']
         if project_id and file:
             # Check if the file has an allowed extension
@@ -117,7 +117,13 @@ def search():
         # Search for images based on uploader or project_id
         db = get_db()
         cursor = db.cursor()
-        cursor.execute('''SELECT project_id FROM images WHERE project_id LIKE ? GROUP BY project_id''', ('%' + query + '%',))
+        
+        if explicit:
+            # Search for exact matches
+            cursor.execute('''SELECT project_id FROM images WHERE project_id = ?''', (query,))
+        else:
+            # Search for partial matches
+            cursor.execute('''SELECT project_id FROM images WHERE project_id LIKE ? GROUP BY project_id''', ('%' + query + '%',))
 
         results = cursor.fetchall()
         cursor.close()
