@@ -24,7 +24,7 @@
         {% endfor %}
     {% else %}
         <p>No results found.</p>
-        <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
+        <a href="{{ url_for('search') }}" class="btn btn-primary">Back to Search</a>
     {% endif %}
 <script src="{{ url_for('static', filename='js/picture-modal.js') }}"></script>
 {% endblock %}
