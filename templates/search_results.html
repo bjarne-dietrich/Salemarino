@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Salemarino</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/browse">Browse</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <h2>Search Results for "{{ query }}"</h2>
+        {% if results %}
+            {% for folder in results %}
+                <h3>{{ folder }}</h3>
+                <div class="row">
+                    {% for image in get_images_in_folder(folder) %}
+                        <div class="col-md-3">
+                            <div class="card mb-3">
+                                <a href="#" onclick="showModal('{{ url_for('display_image', folder=folder, image=image) }}')">
+                                    <img src="{{ url_for('display_image', folder=folder, image=image) }}" class="card-img-top" alt="{{ image }}">
+                                </a>
+                                <div class="card-body">
+                                    <p class="card-text">{{ image }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No results found.</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
+        {% endif %}
+    </div>
+    <!-- Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- JavaScript function to show full-size image -->
+    <script>
+        function showModal(imageUrl) {
+            // Create a modal with the thumbnail image
+            var modalHtml = '<div class="modal" tabindex="-1" role="dialog">' +
+                                '<div class="modal-dialog" role="document">' +
+                                    '<div class="modal-content">' +
+                                        '<div class="modal-body">' +
+                                            '<img src="' + imageUrl + '" class="img-fluid" id="fullSizeImage">' +
+                                        '</div>' +
+                                        '<div class="modal-footer">' +
+                                            '<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>' +
+                                            '<button type="button" class="btn btn-primary" onclick="openInNewTab()">Open in New Tab</button>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>';
+            $(modalHtml).modal();  // Show the modal
+        }
+
+        function openInNewTab() {
+            var fullSizeImage = document.getElementById('fullSizeImage');
+            if (fullSizeImage) {
+                window.open(fullSizeImage.src, '_blank');  // Open the full-size image URL in a new tab
+            }
+        }
+    </script>
+</body>
+</html>
