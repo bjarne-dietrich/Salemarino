@@ -3,10 +3,10 @@
 {% block title %}Browse - Salemarino{% endblock %}
 
 {% block content %}
-        <h2>Browse Folders</h2>
+        <h2>Browse Projects</h2>
         <ul class="list-group">
-            {% for folder in folders %}
-                <a href="{{ url_for('search', query=folder, explicit='true') }}" class="list-group-item list-group-item-action">{{ folder }}</a>
+            {% for project in projects %}
+                <a href="{{ url_for('search', query=project, explicit='true') }}" class="list-group-item list-group-item-action">{{ project[0] }}</a>
             {% endfor %}
         </ul>
     </div>
