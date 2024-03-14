@@ -52,6 +52,7 @@
             <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
         {% endif %}
     </div>
+
     <!-- Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
@@ -59,11 +60,7 @@
 
     <!-- JavaScript function to show full-size image -->
     <script>
-        // Store Last Url for new tab opening
-        lastImageUrl = '';
-
         function showModal(imageUrl) {
-            lastImageUrl = imageUrl
             // Create a modal with the thumbnail image
             var modalHtml = '<div class="modal" tabindex="-1" role="dialog">' +
                                 '<div class="modal-dialog" role="document">' +
@@ -73,7 +70,7 @@
                                         '</div>' +
                                         '<div class="modal-footer">' +
                                             '<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>' +
-                                            '<button type="button" class="btn btn-primary" onclick="openInNewTab()">Open in New Tab</button>' +
+                                            '<button type="button" class="btn btn-primary" onclick="openInNewTab(&quot;' + imageUrl + '&quot;)">Open in New Tab</button>' +
                                         '</div>' +
                                     '</div>' +
                                 '</div>' +
@@ -81,9 +78,10 @@
             $(modalHtml).modal();  // Show the modal
         }
 
-        function openInNewTab() {
-            if (lastImageUrl) {
-                window.open(lastImageUrl, '_blank');  // Open the full-size image URL in a new tab
+         // JavaScript function to open an image in a new tab
+        function openInNewTab(imageUrl) {
+            if (imageUrl) { 
+                window.open(imageUrl, '_blank');
             }
         }
     </script>
