@@ -12,7 +12,8 @@ function showModal(imageUrl) {
                                 '</div>' +
                                 '<div class="modal-footer">' +
                                     '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>' +
-                                    '<button type="button" class="btn btn-primary" onclick="openInNewTab(\'' + imageUrl + '\')">Open in New Tab</button>' +
+                                    '<button type="button" class="btn btn-primary" onclick="openInNewTab(\'' + imageUrl + '?attached=true\')">Download</button>' +
+                                    '<button type="button" class="btn btn-primary" onclick="openInNewTab(\'' + imageUrl + '\')">Open</button>' +
                                 '</div>' +
                             '</div>' +
                         '</div>' +
