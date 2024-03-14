@@ -1,13 +1,51 @@
-from flask import Flask, request, render_template, send_from_directory
+from flask import Flask, request, render_template, send_from_directory, g
 from werkzeug.utils import secure_filename
-import os
+import os, sqlite3, uuid
 from datetime import datetime
+from PIL import Image, ExifTags
 
 app = Flask(__name__)
 
+app.config['DATABASE'] = 'main.db'
+
+# Function to get the SQLite connection
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(app.config['DATABASE'])
+    return db
+
+# Function to close the SQLite connection at the end of the request
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+# Create a table to store image metadata
+def init_db():
+    with app.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS images (
+                            id INTEGER PRIMARY KEY,
+                            project_id TEXT,
+                            filename TEXT,
+                            uploader TEXT,
+                            upload_timestamp TEXT
+                        )''')
+        db.commit()
+
+# Initialize the database when the application starts
+init_db()
+
+
 # Define the directory where files are stored
-UPLOAD_FOLDER = 'data'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['UPLOAD_FOLDER'] = 'data'
+
+# Create 'data' directory if it doesn't exist
+data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview')
+os.makedirs(data_dir, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB in bytes
@@ -18,29 +56,50 @@ def allowed_file(filename):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        folder_name = request.form['folderName']
+        project_id = request.form['folderName']
         file = request.files['file']
-        if folder_name and file:
+        if project_id and file:
             # Check if the file has an allowed extension
             if allowed_file(file.filename):
                 # Check if the file size is within the allowed limit
                 if request.content_length <= MAX_FILE_SIZE:
-                    # Create a folder with the given folder name under 'data' directory
-                    data_dir = os.path.join(os.getcwd(), app.config['UPLOAD_FOLDER'])
-                    folder_path = os.path.join(data_dir, folder_name)
-                    os.makedirs(folder_path, exist_ok=True)
-                    print(f"Folder created: {folder_path}")
 
-                    # Generate timestamp
-                    timestamp = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
-
-                    # Save the file in the folder with timestamp as part of filename
-                    file_name = f"{timestamp}_{secure_filename(file.filename)}"
-                    file_path = os.path.join(folder_path, file_name)
-
-                    # Save the file
+                    # Save the file with a UUID as the filename
+                    filename = str(uuid.uuid4()) + str("_") + secure_filename(file.filename)
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                     file.save(file_path)
+                    
                     print(f"File saved: {file_path}")
+
+                    # Open the original image
+                    with Image.open(file_path) as img:
+                        if hasattr(img, '_getexif') and img._getexif() is not None:
+                            exif_data = img._getexif()
+                            for tag, value in exif_data.items():
+                                if tag in ExifTags.TAGS.keys() and ExifTags.TAGS[tag] == 'Orientation':
+                                    if value == 3:
+                                        img = img.rotate(180, expand=True)
+                                    elif value == 6:
+                                        img = img.rotate(270, expand=True)
+                                    elif value == 8:
+                                        img = img.rotate(90, expand=True)
+
+                        
+                        # Resize the image to the square size without preserving aspect ratio
+                        img = img.resize((1024, 1024))
+
+                        # Save the scaled-down image under data/preview with the same filename
+                        preview_file_path = os.path.join('data', 'preview', filename)
+                        img.save(preview_file_path)
+                        print(f"Preview image saved: {preview_file_path}")
+
+                    upload_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    db = get_db()
+                    cursor = db.cursor()
+                    cursor.execute('''INSERT INTO images (project_id, filename, upload_timestamp)
+                                    VALUES (?, ?, ?)''', (project_id, filename, upload_timestamp))
+                    db.commit()
+
 
                     return render_template('upload_success.html')
                 else:
@@ -55,51 +114,70 @@ def search():
     query = request.args.get('query', '')
     explicit = request.args.get('explicit', '').lower() == 'true'
     if query:
-        # Search for folders containing the query string
-        results = []
-        for root, dirs, files in os.walk(app.config['UPLOAD_FOLDER']):
-            for dir in dirs:
-                if explicit:
-                    if query == dir:
-                        results.append(os.path.relpath(os.path.join(root, dir), app.config['UPLOAD_FOLDER']))
-                else:
-                    if query in dir:
-                        results.append(os.path.relpath(os.path.join(root, dir), app.config['UPLOAD_FOLDER']))
-        print(f"Search results for query '{query}': {results}")
-        return render_template('search_results.html', query=query, results=results, get_images_in_folder=get_images_in_folder)
+        # Search for images based on uploader or project_id
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''SELECT project_id FROM images WHERE project_id LIKE ? GROUP BY project_id''', ('%' + query + '%',))
+
+        results = cursor.fetchall()
+        cursor.close()
+
+        # Extract unique project IDs from the search results
+        project_ids = [result[0] for result in results]
+
+        print(f"Search results for query '{query}': {project_ids}")
+        return render_template('search_results.html', query=query, results=project_ids, get_images_in_project=get_images_in_project)
     else:
         print("Error: No search query provided.")
         return render_template('search.html')
 
-@app.route('/file/<path:filename>')
-def download_file(filename):
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+@app.route('/file/<image>')
+def download_file(image):
+    attached = request.args.get('attached', '').lower() == 'true'
+    print("AT: ", request.args.get('attached', ''))
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
     if os.path.exists(file_path):
-        print(f"Downloading file: {file_path}")
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
-    else:
-        print(f"Error: File not found: {file_path}")
-        return 'File not found.', 404
-
-@app.route('/display_image/<folder>/<image>')
-def display_image(folder, image):
-    folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
-    image_path = os.path.join(folder_path, image)
-    if os.path.exists(image_path):
-        return send_from_directory(folder_path, image)
+        return send_from_directory(app.config['UPLOAD_FOLDER'], image, as_attachment=attached)
     else:
         return 'Image not found.', 404
+    
+@app.route('/preview/<image>')
+def preview_file(image):
+    print("AT: ", request.args.get('attached', ''))
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'preview', image)
+    if os.path.exists(file_path):
+        return send_from_directory(os.path.join(app.config['UPLOAD_FOLDER'], 'preview'), image)
+    else:
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
+        if os.path.exists(file_path):
+            return send_from_directory(app.config['UPLOAD_FOLDER'], image)
+        else:
+            return 'Image not found.', 404
 
 @app.route('/browse')
 def browse():
-    # List all folders in the 'data' directory
-    folders = sorted([f for f in os.listdir(app.config['UPLOAD_FOLDER']) if os.path.isdir(os.path.join(app.config['UPLOAD_FOLDER'], f))])
-    return render_template('browse.html', folders=folders)
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''SELECT DISTINCT project_id FROM images''')
+    projects = cursor.fetchall()
+    print(projects)
+    return render_template('browse.html', projects=projects)
 
-def get_images_in_folder(folder):
-    folder_path = os.path.join(app.config['UPLOAD_FOLDER'], folder)
-    images = [file for file in os.listdir(folder_path) if file.endswith(('.jpg', '.jpeg', '.png', '.gif'))]
+def get_images_in_project(project_id):
+    print(project_id)
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''SELECT filename, upload_timestamp FROM images WHERE project_id = ?''', (project_id,))
+    images_data = cursor.fetchall()
+    cursor.close()
+
+    images = []
+    for data in images_data:
+        print(data)
+        images.append((data[0],data[1]))
+
     return images
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
