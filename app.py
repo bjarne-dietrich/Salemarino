@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, send_from_directory, g
+from flask import Flask, request, render_template, send_from_directory, g, jsonify
 from werkzeug.utils import secure_filename
 import os, sqlite3, uuid
 from datetime import datetime
@@ -120,7 +120,7 @@ def search():
         
         if explicit:
             # Search for exact matches
-            cursor.execute('''SELECT project_id FROM images WHERE project_id = ?''', (query,))
+            cursor.execute('''SELECT project_id FROM images WHERE project_id = ? GROUP BY project_id ''', (query,))
         else:
             # Search for partial matches
             cursor.execute('''SELECT project_id FROM images WHERE project_id LIKE ? GROUP BY project_id''', ('%' + query + '%',))
@@ -184,6 +184,42 @@ def get_images_in_project(project_id):
 
     return images
 
+# Function to delete an image from the database and filesystem
+def delete_image_from_db_and_filesystem(filename):
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''DELETE FROM images WHERE filename = ?''', (filename,))
+        db.commit()
+        print(f"Image '{filename}' deleted from the database.")
+
+        # Delete image file from 'data' folder
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"Image file '{filename}' deleted from 'data' folder.")
+
+        # Delete preview image file from 'data/preview' folder
+        preview_file_path = os.path.join('data', 'preview', filename)
+        if os.path.exists(preview_file_path):
+            os.remove(preview_file_path)
+            print(f"Preview image file '{filename}' deleted from 'data/preview' folder.")
+
+    except sqlite3.Error as e:
+        print(f"Error deleting image '{filename}' from the database:", e)
+    finally:
+        cursor.close()
+
+@app.route('/delete_image', methods=['POST'])
+def delete_image():
+    data = request.get_json()
+    filename = data.get('filename', None)
+    if filename:
+        # Delete the image from the database and filesystem
+        delete_image_from_db_and_filesystem(filename)
+        return jsonify({'status': 'success', 'message': f'Image "{filename}" deleted from the database and filesystem.'}), 200
+    else:
+        return jsonify({'status': 'error', 'message': 'No filename provided.'}), 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)
