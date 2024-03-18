@@ -1,3 +1,8 @@
+// Enable Tooltips
+$(function () {
+    $('[data-toggle="tooltip"]').tooltip()
+  })
+
 // JavaScript function to delete an image
 function deleteImage(imageUrl) {
     // Display a confirmation dialog
@@ -25,13 +30,23 @@ function showModal(imageUrl) {
                         '<div class="modal-dialog" role="document">' +
                             '<div class="modal-content">' +
                                 '<div class="modal-body">' +
-                                    '<img src="' + imageUrl + '" class="img-fluid" id="fullSizeImage">' +
+                                    '<div class="container">' +
+                                        '<img src="' + imageUrl + '" class="img-fluid rounded-2" id="fullSizeImage">' +
+                                    '</div>' +
                                 '</div>' +
                                 '<div class="modal-footer">' +
-                                    '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>' +
-                                    '<button type="button" class="btn btn-danger" onclick="deleteImageConfirmation(\'' + imageUrl + '\')">Delete</button>' +
-                                    '<button type="button" class="btn btn-primary" onclick="openInNewTab(\'' + imageUrl + '?attached=true\')">Download</button>' +
-                                    '<button type="button" class="btn btn-primary" onclick="openInNewTab(\'' + imageUrl + '\')">Open</button>' +
+                                    '<div class="container">' +
+                                        '<div class="row">' +
+                                            '<div class="col-auto me-auto">' +
+                                                '<button type="button" class="btn btn-outline-secondary" data-placement="bottom" title="Close" data-bs-dismiss="modal">Close</button>' +
+                                            '</div>' + 
+                                            '<div class="col-auto">' +
+                                                '<button type="button" class="btn btn-outline-danger mx-1" data-placement="bottom" title="Delete" onclick="deleteImageConfirmation(\'' + imageUrl + '\')"><i class="bi-trash3"></i></button>' +
+                                                '<button type="button" class="btn btn-outline-primary mx-1" data-placement="bottom" title="Download" onclick="openInNewTab(\'' + imageUrl + '?attached=true\')"><i class="bi bi-cloud-download"></i></button>' +
+                                                '<button type="button" class="btn btn-outline-primary mx-1" data-placement="bottom" title="Open in new Tab" onclick="openInNewTab(\'' + imageUrl + '\')"><i class="bi bi-box-arrow-up-right"></i></button>' +
+                                            '</div>' + 
+                                        '</div>' +
+                                    '</div>' +
                                 '</div>' +
                             '</div>' +
                         '</div>' +
