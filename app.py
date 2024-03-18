@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, send_from_directory, g, jsonify, make_response
+from flask import Flask, request, render_template, send_from_directory, g, jsonify, make_response,redirect, url_for
 from werkzeug.utils import secure_filename
 import os, sqlite3, uuid
 from datetime import datetime
@@ -233,6 +233,11 @@ def download_all_images():
         cursor.execute('''SELECT project_id, filename FROM images''')
         project_images = cursor.fetchall()
 
+        # Check if there are any images in the database
+        if not project_images:
+            # Redirect to the empty_database route
+            return redirect(url_for('empty_database'))
+
         # Create a BytesIO object to hold the ZIP file in memory
         zip_data = BytesIO()
         with zipfile.ZipFile(zip_data, mode='w') as zipf:
@@ -266,6 +271,11 @@ def download_all_images():
         return jsonify({'status': 'error', 'message': 'Error downloading all images.'}), 500
     finally:
         cursor.close()
+
+@app.route('/empty_database', methods=['GET'])
+def empty_database():
+    return render_template('empty_database.html')
+
 
 
 if __name__ == '__main__':
