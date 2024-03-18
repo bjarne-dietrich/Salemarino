@@ -48,6 +48,7 @@ function openInNewTab(imageUrl) {
     }
 }
 
+// JavaScript function to delete an image with confirmation dialog
 function deleteImageConfirmation(imageUrl) {
     // Display a confirmation dialog
     var confirmation = confirm("Are you sure you want to delete this image?");
@@ -61,6 +62,17 @@ function deleteImageConfirmation(imageUrl) {
         var xhr = new XMLHttpRequest();
         xhr.open("POST", "/delete_image", true);
         xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    // Image successfully deleted, reload the search page
+                    location.reload();
+                } else {
+                    console.error('Error deleting image:', xhr.responseText);
+                    alert('Error deleting image. Please try again.');
+                }
+            }
+        };
         xhr.send(JSON.stringify({filename: filename}));
         
         // Optionally, you may close the modal after deletion
