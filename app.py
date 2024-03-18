@@ -1,8 +1,10 @@
-from flask import Flask, request, render_template, send_from_directory, g, jsonify
+from flask import Flask, request, render_template, send_from_directory, g, jsonify, make_response
 from werkzeug.utils import secure_filename
 import os, sqlite3, uuid
 from datetime import datetime
 from PIL import Image, ExifTags
+import zipfile
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -10,7 +12,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'data'
 
 # Create 'data' directory if it doesn't exist
-data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview', 'database')
+data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview', 'database', 'downloads')
 os.makedirs(data_dir, exist_ok=True)
 
 app.config['DATABASE'] = os.path.join(data_dir, 'main.db')
@@ -220,6 +222,51 @@ def delete_image():
         return jsonify({'status': 'success', 'message': f'Image "{filename}" deleted from the database and filesystem.'}), 200
     else:
         return jsonify({'status': 'error', 'message': 'No filename provided.'}), 400
+    
+import shutil
+
+@app.route('/download_all_images', methods=['GET'])
+def download_all_images():
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''SELECT project_id, filename FROM images''')
+        project_images = cursor.fetchall()
+
+        # Create a BytesIO object to hold the ZIP file in memory
+        zip_data = BytesIO()
+        with zipfile.ZipFile(zip_data, mode='w') as zipf:
+            for project_id, filename in project_images:
+                folder_path = os.path.join('data', 'downloads', project_id)
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                if os.path.exists(file_path):
+                    zipf.write(file_path, os.path.join(project_id, filename))
+
+        # Move to the beginning of the BytesIO object
+        zip_data.seek(0)
+
+        # Create a Flask response with the ZIP file
+        response = make_response(zip_data.getvalue())
+        response.headers['Content-Type'] = 'application/zip'
+        response.headers['Content-Disposition'] = 'attachment; filename=all_images.zip'
+        
+        # Clear the 'downloads' folder after download
+        downloads_folder = os.path.join('data', 'downloads')
+        if os.path.exists(downloads_folder):
+            shutil.rmtree(downloads_folder)
+            os.makedirs(downloads_folder)
+
+        return response
+
+    except sqlite3.Error as e:
+        print("Error downloading all images:", e)
+        return jsonify({'status': 'error', 'message': 'Error downloading all images.'}), 500
+    finally:
+        cursor.close()
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
