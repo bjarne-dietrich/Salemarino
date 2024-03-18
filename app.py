@@ -12,7 +12,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'data'
 
 # Create 'data' directory if it doesn't exist
-data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview', 'database', 'downloads')
+data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'database')
 os.makedirs(data_dir, exist_ok=True)
 
 app.config['DATABASE'] = os.path.join(data_dir, 'main.db')
