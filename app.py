@@ -6,7 +6,14 @@ from PIL import Image, ExifTags
 
 app = Flask(__name__)
 
-app.config['DATABASE'] = 'main.db'
+# Define the directory where files are stored
+app.config['UPLOAD_FOLDER'] = 'data'
+
+# Create 'data' directory if it doesn't exist
+data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview', 'database')
+os.makedirs(data_dir, exist_ok=True)
+
+app.config['DATABASE'] = os.path.join(data_dir, 'main.db')
 
 # Function to get the SQLite connection
 def get_db():
@@ -39,13 +46,6 @@ def init_db():
 # Initialize the database when the application starts
 init_db()
 
-
-# Define the directory where files are stored
-app.config['UPLOAD_FOLDER'] = 'data'
-
-# Create 'data' directory if it doesn't exist
-data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview')
-os.makedirs(data_dir, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB in bytes
@@ -223,3 +223,4 @@ def delete_image():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=True)
+    
