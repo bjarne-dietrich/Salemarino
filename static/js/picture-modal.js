@@ -78,9 +78,13 @@ function deleteImageConfirmation(imageUrl) {
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.send(JSON.stringify({filename: filename}));
         
-        // Optionally, you may close the modal after deletion
+        // Close the modal after deletion
         var modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
         modal.hide();
+        setTimeout(function(){
+            window.location.reload();
+         }, 500);
+        
     } else {
         // User canceled deletion
         console.log('Deletion canceled by user.');
