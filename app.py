@@ -6,7 +6,10 @@ from PIL import Image, ExifTags
 
 app = Flask(__name__)
 
-app.config['DATABASE'] = 'main.db'
+# Define the directory where files are stored
+app.config['UPLOAD_FOLDER'] = 'data'
+
+app.config['DATABASE'] = app.config['UPLOAD_FOLDER'] + '/main.db'
 
 # Function to get the SQLite connection
 def get_db():
@@ -38,10 +41,6 @@ def init_db():
 
 # Initialize the database when the application starts
 init_db()
-
-
-# Define the directory where files are stored
-app.config['UPLOAD_FOLDER'] = 'data'
 
 # Create 'data' directory if it doesn't exist
 data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview')
