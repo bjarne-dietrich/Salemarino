@@ -1,15 +1,23 @@
-from flask import Flask, request, render_template, send_from_directory, g, jsonify
+from flask import Flask, request, render_template, send_from_directory, g, jsonify, make_response,redirect, url_for
 from werkzeug.utils import secure_filename
 import os, sqlite3, uuid
 from datetime import datetime
 from PIL import Image, ExifTags
+import zipfile
+from io import BytesIO
 
 app = Flask(__name__)
 
 # Define the directory where files are stored
 app.config['UPLOAD_FOLDER'] = 'data'
 
-app.config['DATABASE'] = app.config['UPLOAD_FOLDER'] + '/main.db'
+# Create 'database and preview' direcoory if it doesn't exist
+database_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'database')
+preview_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview')
+os.makedirs(database_dir, exist_ok=True)
+os.makedirs(preview, exist_ok=True)
+
+app.config['DATABASE'] = os.path.join(database_dir, 'main.db')
 
 # Function to get the SQLite connection
 def get_db():
@@ -41,10 +49,6 @@ def init_db():
 
 # Initialize the database when the application starts
 init_db()
-
-# Create 'data' directory if it doesn't exist
-data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview')
-os.makedirs(data_dir, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB in bytes
@@ -219,6 +223,61 @@ def delete_image():
         return jsonify({'status': 'success', 'message': f'Image "{filename}" deleted from the database and filesystem.'}), 200
     else:
         return jsonify({'status': 'error', 'message': 'No filename provided.'}), 400
+    
+import shutil
+
+@app.route('/download_all_images', methods=['GET'])
+def download_all_images():
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''SELECT project_id, filename FROM images''')
+        project_images = cursor.fetchall()
+
+        # Check if there are any images in the database
+        if not project_images:
+            # Redirect to the empty_database route
+            return redirect(url_for('empty_database'))
+
+        # Create a BytesIO object to hold the ZIP file in memory
+        zip_data = BytesIO()
+        with zipfile.ZipFile(zip_data, mode='w') as zipf:
+            for project_id, filename in project_images:
+                folder_path = os.path.join('data', 'downloads', project_id)
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
+
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                if os.path.exists(file_path):
+                    zipf.write(file_path, os.path.join(project_id, filename))
+
+        # Move to the beginning of the BytesIO object
+        zip_data.seek(0)
+
+        # Create a Flask response with the ZIP file
+        response = make_response(zip_data.getvalue())
+        response.headers['Content-Type'] = 'application/zip'
+        response.headers['Content-Disposition'] = 'attachment; filename=all_images.zip'
+        
+        # Clear the 'downloads' folder after download
+        downloads_folder = os.path.join('data', 'downloads')
+        if os.path.exists(downloads_folder):
+            shutil.rmtree(downloads_folder)
+            os.makedirs(downloads_folder)
+
+        return response
+
+    except sqlite3.Error as e:
+        print("Error downloading all images:", e)
+        return jsonify({'status': 'error', 'message': 'Error downloading all images.'}), 500
+    finally:
+        cursor.close()
+
+@app.route('/empty_database', methods=['GET'])
+def empty_database():
+    return render_template('empty_database.html')
+
+
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
