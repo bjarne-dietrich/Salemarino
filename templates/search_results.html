@@ -15,7 +15,8 @@
                                 <img src="{{ url_for('preview_file', image=image[0]) }}" class="card-img-top" alt="{{ image[1] }}">
                             </a>
                             <div class="card-body">
-                                <p class="card-text">{{ image[1] }}</p>
+                                <p class="card-text">{{ get_comment(image) }}
+                                </p>
                             </div>
                         </div>
                     </div>
