@@ -45,6 +45,7 @@ def init_db():
                             id INTEGER PRIMARY KEY,
                             project_id TEXT,
                             filename TEXT,
+                            comment TEST,
                             uploader TEXT,
                             upload_timestamp TEXT
                         )''')
@@ -64,6 +65,7 @@ def index():
     if request.method == 'POST':
         project_id = request.form['projectID']
         file = request.files['file']
+        comment = request.form['comment']
         if project_id and file:
             # Check if the file has an allowed extension
             if allowed_file(file.filename):
@@ -102,8 +104,8 @@ def index():
                     upload_timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     db = get_db()
                     cursor = db.cursor()
-                    cursor.execute('''INSERT INTO images (project_id, filename, upload_timestamp)
-                                    VALUES (?, ?, ?)''', (project_id, filename, upload_timestamp))
+                    cursor.execute('''INSERT INTO images (project_id, filename, comment, upload_timestamp)
+                                    VALUES (?, ?, ?, ?)''', (project_id, filename, comment, upload_timestamp))
                     db.commit()
 
 
@@ -138,7 +140,7 @@ def search():
         project_ids = [result[0] for result in results]
 
         print(f"Search results for query '{query}': {project_ids}")
-        return render_template('search_results.html', query=query, results=project_ids, get_images_in_project=get_images_in_project)
+        return render_template('search_results.html', query=query, results=project_ids, get_images_in_project=get_images_in_project, get_comment=get_comment)
     else:
         print("Error: No search query provided.")
         return render_template('search.html')
@@ -152,7 +154,7 @@ def download_file(image):
         return send_from_directory(app.config['IMAGES_FOLDER'], image, as_attachment=attached)
     else:
         return 'Image not found.', 404
-    
+
 @app.route('/preview/<image>')
 def preview_file(image):
     file_path = os.path.join(app.config['PREVIEW_FOLDER'], image)
@@ -184,6 +186,17 @@ def get_images_in_project(project_id):
         images.append((data[0],data[1]))
 
     return images
+
+# Returns the Comment for a given Image
+def get_comment(image):
+    print(image)
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('''SELECT comment FROM images WHERE filename = ?''', (image[0],))
+    comments = cursor.fetchall()
+    cursor.close()
+    print(comments[0])
+    return comments[0][0]
 
 # Function to delete an image from the database and filesystem
 def delete_image_from_db_and_filesystem(filename):
