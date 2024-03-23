@@ -10,14 +10,17 @@ app = Flask(__name__)
 
 # Define the directory where files are stored
 app.config['UPLOAD_FOLDER'] = 'data'
+app.config['IMAGES_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'images')
+app.config['DATABASE_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'database')
+app.config['PREVIEW_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], 'preview')
 
-# Create 'database and preview' direcoory if it doesn't exist
-database_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'database')
-preview_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview')
-os.makedirs(database_dir, exist_ok=True)
-os.makedirs(preview_dir, exist_ok=True)
 
-app.config['DATABASE'] = os.path.join(database_dir, 'main.db')
+# Create database, preview and images directory if it doesn't exist
+os.makedirs(app.config['DATABASE_FOLDER'], exist_ok=True)
+os.makedirs(app.config['IMAGES_FOLDER'], exist_ok=True)
+os.makedirs(app.config['IMAGES_FOLDER'], exist_ok=True)
+
+app.config['DATABASE'] = os.path.join(app.config['DATABASE_FOLDER'], 'main.db')
 
 # Function to get the SQLite connection
 def get_db():
@@ -69,7 +72,7 @@ def index():
 
                     # Save the file with a UUID as the filename
                     filename = str(uuid.uuid4()) + str("_") + secure_filename(file.filename)
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file_path = os.path.join(app.config['IMAGES_FOLDER'], filename)
                     file.save(file_path)
                     
                     print(f"File saved: {file_path}")
@@ -144,24 +147,19 @@ def search():
 def download_file(image):
     attached = request.args.get('attached', '').lower() == 'true'
     print("AT: ", request.args.get('attached', ''))
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
+    file_path = os.path.join(app.config['IMAGES_FOLDER'], image)
     if os.path.exists(file_path):
-        return send_from_directory(app.config['UPLOAD_FOLDER'], image, as_attachment=attached)
+        return send_from_directory(app.config['IMAGES_FOLDER'], image, as_attachment=attached)
     else:
         return 'Image not found.', 404
     
 @app.route('/preview/<image>')
 def preview_file(image):
-    print("AT: ", request.args.get('attached', ''))
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], 'preview', image)
+    file_path = os.path.join(app.config['PREVIEW_FOLDER'], image)
     if os.path.exists(file_path):
-        return send_from_directory(os.path.join(app.config['UPLOAD_FOLDER'], 'preview'), image)
+        return send_from_directory(app.config['PREVIEW_FOLDER'], image)
     else:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], image)
-        if os.path.exists(file_path):
-            return send_from_directory(app.config['UPLOAD_FOLDER'], image)
-        else:
-            return 'Image not found.', 404
+        return 'Preview not found.', 404
 
 @app.route('/browse')
 def browse():
@@ -197,13 +195,13 @@ def delete_image_from_db_and_filesystem(filename):
         print(f"Image '{filename}' deleted from the database.")
 
         # Delete image file from 'data' folder
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file_path = os.path.join(app.config['IMAGES_FOLDER'], filename)
         if os.path.exists(file_path):
             os.remove(file_path)
             print(f"Image file '{filename}' deleted from 'data' folder.")
 
         # Delete preview image file from 'data/preview' folder
-        preview_file_path = os.path.join('data', 'preview', filename)
+        preview_file_path = os.path.join(app.config['PREVIEW_FOLDER'], filename)
         if os.path.exists(preview_file_path):
             os.remove(preview_file_path)
             print(f"Preview image file '{filename}' deleted from 'data/preview' folder.")
@@ -247,7 +245,7 @@ def download_all_images():
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
 
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file_path = os.path.join(app.config['IMAGES_FOLDER'], filename)
                 if os.path.exists(file_path):
                     zipf.write(file_path, os.path.join(project_id, filename))
 
