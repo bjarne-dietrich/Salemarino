@@ -11,11 +11,13 @@ app = Flask(__name__)
 # Define the directory where files are stored
 app.config['UPLOAD_FOLDER'] = 'data'
 
-# Create 'data' directory if it doesn't exist
-data_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'database')
-os.makedirs(data_dir, exist_ok=True)
+# Create 'database and preview' direcoory if it doesn't exist
+database_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'database')
+preview_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview')
+os.makedirs(database_dir, exist_ok=True)
+os.makedirs(preview, exist_ok=True)
 
-app.config['DATABASE'] = os.path.join(data_dir, 'main.db')
+app.config['DATABASE'] = os.path.join(database_dir, 'main.db')
 
 # Function to get the SQLite connection
 def get_db():
@@ -47,7 +49,6 @@ def init_db():
 
 # Initialize the database when the application starts
 init_db()
-
 
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB in bytes
