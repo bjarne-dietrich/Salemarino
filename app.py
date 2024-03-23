@@ -15,7 +15,7 @@ app.config['UPLOAD_FOLDER'] = 'data'
 database_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'database')
 preview_dir = os.path.join(app.config['UPLOAD_FOLDER'], 'preview')
 os.makedirs(database_dir, exist_ok=True)
-os.makedirs(preview, exist_ok=True)
+os.makedirs(preview_dir, exist_ok=True)
 
 app.config['DATABASE'] = os.path.join(database_dir, 'main.db')
 
@@ -280,4 +280,4 @@ def empty_database():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5001, debug=True)

@@ -90,7 +90,7 @@ This is a Flask project for Storing and Getting Images from the Web Browser.
 3. Run the Docker container:
 
     ```bash
-    docker run -p 5000:5000 -v ./data:/app/data salemarino
+    docker run -p 5001:5001 -v ./data:/app/data salemarino
     ```
 
 4. Access the application in your web browser at `http://localhost:5000`.
