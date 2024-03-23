@@ -5,17 +5,17 @@
 {% block content %}
     <h2>Search Results for "{{ query }}"</h2>
     {% if results %}
-        {% for folder in results %}
-            <h3>{{ folder }}</h3>
+        {% for project_id in results %}
+            <h3>{{ project_id }}</h3>
             <div class="row">
-                {% for image in get_images_in_folder(folder) %}
+                {% for image in get_images_in_project(project_id) %}
                     <div class="col-md-3">
                         <div class="card mb-3">
-                            <a href="#" onclick="showModal('{{ url_for('display_image', folder=folder, image=image) }}')">
-                                <img src="{{ url_for('display_image', folder=folder, image=image) }}" class="card-img-top" alt="{{ image }}">
+                            <a href="#" onclick="showModal('{{ url_for('download_file', image=image[0]) }}')">
+                                <img src="{{ url_for('preview_file', image=image[0]) }}" class="card-img-top" alt="{{ image[1] }}">
                             </a>
                             <div class="card-body">
-                                <p class="card-text">{{ image }}</p>
+                                <p class="card-text">{{ image[1] }}</p>
                             </div>
                         </div>
                     </div>
@@ -24,7 +24,7 @@
         {% endfor %}
     {% else %}
         <p>No results found.</p>
-        <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Home</a>
+        <a href="{{ url_for('search') }}" class="btn btn-primary">Back to Search</a>
     {% endif %}
 <script src="{{ url_for('static', filename='js/picture-modal.js') }}"></script>
 {% endblock %}
