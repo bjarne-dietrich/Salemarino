@@ -75,7 +75,7 @@ This is a Flask project for Storing and Getting Images from the Web Browser.
     python app.py
     ```
 
-3. Access the application in your web browser at `http://localhost:5000`.
+3. Access the application in your web browser at `http://localhost:5001`.
 
 ### Running with Docker
 
@@ -93,7 +93,7 @@ This is a Flask project for Storing and Getting Images from the Web Browser.
     docker run -p 5001:5001 -v ./data:/app/data salemarino
     ```
 
-4. Access the application in your web browser at `http://localhost:5000`.
+4. Access the application in your web browser at `http://localhost:5001`.
 
 ## Notes
 
