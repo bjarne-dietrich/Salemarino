@@ -41,8 +41,8 @@ function showModal(imageUrl) {
                                                 '<button type="button" class="btn btn-outline-secondary" data-placement="bottom" title="Close" data-bs-dismiss="modal">Close</button>' +
                                             '</div>' + 
                                             '<div class="col-auto">' +
-                                                '<button type="button" class="btn btn-outline-primary mx-1 edit-button" data-placement="bottom" title="Edit Comment" onclick="editComment(\'' + imageUrl + '\')">Edit Comment</button>' +
                                                 '<button type="button" class="btn btn-outline-danger mx-1" data-placement="bottom" title="Delete" onclick="deleteImageConfirmation(\'' + imageUrl + '\')"><i class="bi-trash3"></i></button>' +
+                                                '<button type="button" class="btn btn-outline-primary mx-1 edit-button" data-placement="bottom" title="Edit Comment" onclick="editComment(\'' + imageUrl + '\')"><i class="bi bi-pencil-fill"></i></button>' +
                                                 '<button type="button" class="btn btn-outline-primary mx-1" data-placement="bottom" title="Download" onclick="openInNewTab(\'' + imageUrl + '?attached=true\')"><i class="bi bi-cloud-download"></i></button>' +
                                                 '<button type="button" class="btn btn-outline-primary mx-1" data-placement="bottom" title="Open in new Tab" onclick="openInNewTab(\'' + imageUrl + '\')"><i class="bi bi-box-arrow-up-right"></i></button>' +
                                             '</div>' + 
