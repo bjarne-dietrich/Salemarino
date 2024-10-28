@@ -288,6 +288,26 @@ def download_all_images():
 def empty_database():
     return render_template('empty_database.html')
 
+# Route for editing comment
+@app.route('/edit_comment', methods=['POST'])
+def edit_comment():
+    data = request.get_json()
+    filename = data.get('filename')
+    new_comment = data.get('comment')
+    if filename and new_comment:
+        try:
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute('''UPDATE images SET comment = ? WHERE filename = ?''', (new_comment, filename))
+            db.commit()
+            return jsonify({'status': 'success', 'message': 'Comment updated successfully.'}), 200
+        except sqlite3.Error as e:
+            print("Error updating comment:", e)
+            return jsonify({'status': 'error', 'message': 'Error updating comment.'}), 500
+        finally:
+            cursor.close()
+    else:
+        return jsonify({'status': 'error', 'message': 'Missing filename or comment.'}), 400
 
 
 if __name__ == '__main__':

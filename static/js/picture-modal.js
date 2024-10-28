@@ -1,7 +1,7 @@
 // Enable Tooltips
 $(function () {
-    $('[data-toggle="tooltip"]').tooltip()
-  })
+    $('[data-toggle="tooltip"]').tooltip();
+});
 
 // JavaScript function to delete an image
 function deleteImage(imageUrl) {
@@ -42,6 +42,7 @@ function showModal(imageUrl) {
                                             '</div>' + 
                                             '<div class="col-auto">' +
                                                 '<button type="button" class="btn btn-outline-danger mx-1" data-placement="bottom" title="Delete" onclick="deleteImageConfirmation(\'' + imageUrl + '\')"><i class="bi-trash3"></i></button>' +
+                                                '<button type="button" class="btn btn-outline-primary mx-1 edit-button" data-placement="bottom" title="Edit Comment" onclick="editComment(\'' + imageUrl + '\')"><i class="bi bi-pencil-fill"></i></button>' +
                                                 '<button type="button" class="btn btn-outline-primary mx-1" data-placement="bottom" title="Download" onclick="openInNewTab(\'' + imageUrl + '?attached=true\')"><i class="bi bi-cloud-download"></i></button>' +
                                                 '<button type="button" class="btn btn-outline-primary mx-1" data-placement="bottom" title="Open in new Tab" onclick="openInNewTab(\'' + imageUrl + '\')"><i class="bi bi-box-arrow-up-right"></i></button>' +
                                             '</div>' + 
@@ -100,5 +101,32 @@ function deleteImageConfirmation(imageUrl) {
     } else {
         // User canceled deletion
         console.log('Deletion canceled by user.');
+    }
+}
+
+// JavaScript function to edit the comment
+function editComment(imageUrl) {
+    // Prompt the user to enter a new comment
+    var newComment = prompt("Enter new comment:");
+    if (newComment !== null) {
+        // If the user entered a new comment (not canceled), send an AJAX request to update the comment in the database
+        var filename = imageUrl.split('/').pop(); // Extract filename from the URL
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", "/edit_comment", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    // Comment successfully updated, reload the page or update the comment text on the page dynamically
+                    console.log('Comment updated successfully for image:', imageUrl);
+                    // You can add your code here to update the comment text on the page dynamically if needed
+                    location.reload(); // Reload the page to reflect changes
+                } else {
+                    console.error('Error updating comment for image:', imageUrl);
+                    alert('Error updating comment. Please try again.');
+                }
+            }
+        };
+        xhr.send(JSON.stringify({ filename: filename, comment: newComment }));
     }
 }
